@@ -8,8 +8,8 @@ Feature: Save particular place
     Then VA says "Hello"
     When user says "Save my location"
     Then VA names location
-    And VA asks for confirmation
-    When User confirms
+    When VA asks for confirmation
+    And User confirms
     Then VA asks to set a name
     When User says Библиотека
     Then VA saves location
@@ -21,8 +21,8 @@ Feature: Save particular place
     Then VA says "Hello"
     When user says "Save my location"
     Then VA names location
-    And VA asks for confirmation
-    When User does not confirm
+    When VA asks for confirmation
+    And User does not confirm
     Then VA says "Cancelled"
 
   Scenario: User asks to save current point, but the point with this name already exists
@@ -32,8 +32,8 @@ Feature: Save particular place
     Then VA says "Hello"
     When user says "Save my location"
     Then VA names location
-    And VA asks for confirmation
-    When User confirms
+    When VA asks for confirmation
+    And User confirms
     Then VA asks to set a name
     When User says Библиотека
     Then VA says "Location already exists"
@@ -51,8 +51,23 @@ Feature: Save particular place
     Then VA says "Hello"
     When user says "Save my location"
     Then VA names location
-    And VA asks for confirmation
-    When User confirms
+    When VA asks for confirmation
+    And User confirms
     Then VA asks to set a name
     When User says nothing
     Then VA says 'Can't recognize name'
+
+  Scenario: User asks to save location by address
+    Given service is working
+    When user says "Hello, Borya"
+    Then VA says "Hello"
+    When user says "Save location"
+    Then VA asks "What is the address?"
+    When user says address "Парусная улица дом 17"
+    Then VA names location
+    When VA asks for confirmation
+    And User confirms
+    Then VA asks to set a name
+    When User says Пашин дом
+    Then VA saves location
+    And VA says "Done"

@@ -66,7 +66,7 @@ def step_impl(context):
             else:
                 context.task_status = 'rejected'  # -> VA says "The place is not found"
         else:
-            context.task_status = 'rejected' # не распознали
+            context.task_status = 'rejected'  # не распознали
     elif context.va_task == 'edit' and context.task_status == 'set':
         if context.change_property_val != '' and context.change_property_val is not None:
             if context.change_property == 'name':
@@ -93,7 +93,7 @@ def step_impl(context, prop):
     if prop in edit_properties:
         context.change_property = prop
     else:
-        context.task_status = 'rejected' # куда дальше?
+        context.task_status = 'rejected'  # repeat
 
 
 @then(u'VA asks "What is the new {prop}?"')
@@ -137,8 +137,3 @@ def step_impl(context):
         context.task_status = 'done'
     else:
         context.task_status = 'rejected'
-
-
-@then(u'VA says \'Can\'t recognize new name\'')
-def location_name_error(context):
-    assert context.name_new is None

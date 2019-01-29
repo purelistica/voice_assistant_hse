@@ -11,7 +11,36 @@ def get_location(context):
         context.va_task = 'save'
         context.task_status = 'set'
         context.location = maps_functions.get_current_geo()
-    # else?
+
+
+@when('user says "Save location"')
+def get_location(context):
+    context.user_last_command = ya_speech.recognize("audio_files/save.wav")
+    assert context.user_last_command == "сохрани место"
+    if context.va_task is None:
+        context.va_task = 'save'
+        context.task_status = 'added'
+        context.location = None
+
+
+@then('VA asks "What is the address?"')
+def step_impl(context):
+    assert context.va_task == 'save' and context.task_status == 'added' and context.location is None
+    ya_speech.synthesize('Задай адрес', context.va)
+
+
+@when('user says address {address}')
+def step_impl(context, address):
+    assert context.va_task == 'save'
+    if address != '' and address is not None:
+        loc = maps_functions.get_geo(address)
+        if loc is not None:
+            context.location = loc
+            context.task_status = 'set'
+        else:
+            context.task_status = 'rejected'
+    else:
+        context.task_status = 'rejected'
 
 
 @then(u'VA names location')
