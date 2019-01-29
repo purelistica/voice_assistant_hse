@@ -1,0 +1,5 @@
+behave
+pyaudio
+wave
+urllib
+requests

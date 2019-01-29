@@ -27,12 +27,6 @@ def approve_location(context):
                 context.task_status = 'waits_approve'
 
 
-@then(u'VA asks for confirmation')
-def approve_location(context):
-    assert context.task_status == 'waits_approve'
-    ya_speech.synthesize('Продолжить?', context.va)
-
-
 @then("VA says 'Can't determine location'")
 def get_location_fail(context):
     if context.user_last_command == "сохранить текущее местоположение":

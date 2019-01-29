@@ -14,7 +14,7 @@ def listener(context):
     # record_audio.listen(context.user)
     context.user_last_command = None
     context.va_task = None
-    context.task_status = None  # can be in ['set', 'waits_approve', 'approved', 'rejected', 'done']
+    context.task_status = None  # can be in ['added', 'set', 'waits_approve', 'approved', 'rejected', 'done']
     context.name_active = None
 
 
@@ -22,6 +22,13 @@ def listener(context):
 def step_impl(context):
     d = {}
     locations.update_locations(d)
+
+
+@given('location Библиотека is saved')
+def step_impl(context):
+    d = {"библиотека": {"lat": 59.85976319999999, "lng": 30.191616000000003}}
+    locations.update_locations(d)
+
 
 
 @given('location {name} exists in saved list')
@@ -51,9 +58,15 @@ def hello_boris(context):
 
 
 @then(u'VA says \'Can\'t recognize name\'')
-def hello_user(context):
+def step_impl(context):
     if context.user_last_command is None:
         ya_speech.synthesize('Ошибка распознавания', context.va)
+
+
+@when(u'VA asks for confirmation')
+def approve_location(context):
+    assert context.task_status == 'waits_approve'
+    ya_speech.synthesize('Продолжить?', context.va)
 
 
 @when('User confirms')
