@@ -14,16 +14,20 @@ def step_impl(context):
 
 @when('user says Set up route from {origin} to {destination}')
 def step_impl(context, origin, destination):
-    context.command = 'route'
-    context.route_from = origin
-    context.route_to = destination
+    if context.va_task is None:
+        context.va_task = 'route'
+        context.task_status = 'set'
+        context.route_from = origin
+        context.route_to = destination
 
 
 @when('user says Set up route to {destination}')
 def step_impl(context, destination):
-    context.command = 'route'
-    context.route_from = 'current'
-    context.route_to = destination
+    if context.va_task is None:
+        context.va_task = 'route'
+        context.task_status = 'set'
+        context.route_from = 'current'
+        context.route_to = destination
 
 
 @when(u'User says go by {mode}')
@@ -45,17 +49,23 @@ def step_impl(context):
 
 @then(u'VA validates locations')
 def step_impl(context):
-    if context.route_from == 'current':
-        context.route_from = maps_functions.get_current_geo()
-    else:
-        context.route_from = locations.get_by_name(context.route_from)
-    context.route_to = locations.get_by_name(context.route_to)
+    if context.va_task == 'route' and context.task_status == 'set':
+        if context.route_from == 'current':
+            context.route_from = maps_functions.get_current_geo()
+        else:
+            context.route_from = locations.get_by_name(context.route_from)
+        context.route_to = locations.get_by_name(context.route_to)
+        if context.route_from != 'not found' and context.route_to != 'not_found' and \
+                context.route_from is not None:
+            context.task_status = 'approved'
+        else:
+            context.task_status = 'rejected'
 
 
 @when(u'VA asks "Which way?"')
 def step_impl(context):
-    assert context.route_from != 'not found' and context.route_to != 'not found'
-    assert context.route_from is not None and context.route_to is not None
+    assert context.task_status == 'approved' and context.va_task == 'route'
+    ya_speech.synthesize('Задайте способ передвижения', context.va)
 
 
 @then(u'VA names the travel mode')
@@ -86,7 +96,8 @@ def step_impl(context):
 
 @then(u'VA says "Invalid location(s)"')
 def step_impl(context):
-    assert context.route_from == 'not found' or context.route_to == 'not found'
+    assert context.task_status == "rejected" and context.va_task == "route"
+    ya_speech.synthesize('Невозможно построить маршрут по заданным точкам', context.va)
 
 
 @when(u'user gives command to start the route')
