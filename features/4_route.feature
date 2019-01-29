@@ -20,7 +20,7 @@ Feature: Route Setup
   Given service is working
   When user says "Hello, Borya"
   Then VA says "Hello"
-  When user says Set up route from Университет to Дом
+  When user says Set up route from Университет to Общага
   Then VA validates locations
   And VA says "Invalid location(s)"
 
@@ -56,3 +56,15 @@ Feature: Route Setup
   When VA asks "Which way?"
   And User says go by car
   Then VA says time
+
+ Scenario: Assistant sets up route between the current location and the saved place by car
+  Given service is working
+  And locations Пашин дом and Библиотека are saved
+  When user says "Hello, Borya"
+  Then VA says "Hello"
+  When user says Set up route to Библиотека
+  Then VA validates locations
+  When VA asks "Which way?"
+  And user says choose the fastest mode
+  Then VA names the travel mode
+  And VA says time

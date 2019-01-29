@@ -5,69 +5,69 @@ from modules import additional_funcs, locations
 
 @when('user says "Save my location"')
 def get_location(context):
-    save_loc = ya_speech.recognize("audio_files/save_location.wav")
-    assert save_loc == "сохранить текущее местоположение"
-    context.location = maps_functions.get_current_geo()
-    assert context.location is not None
+    context.user_last_command = ya_speech.recognize("audio_files/save_location.wav")
+    assert context.user_last_command == "сохранить текущее местоположение"
+    if context.va_task is None:
+        context.va_task = 'save'
+        context.task_status = 'set'
+        context.location = maps_functions.get_current_geo()
+    # else?
 
 
-@then(u'VA names location and asks "Confirm?"')
+@then(u'VA names location')
 def approve_location(context):
-    address = maps_functions.get_address(context.location)
-    assert address is not None
-    ya_speech.synthesize(address, context.va)
-    address_clean = additional_funcs.clear_address(address)
-    print(ya_speech.recognize(context.va))
-    print(address_clean)
-    # assert ya_speech.recognize(context.va) == address_clean
-    # TODO тут косяк с сокращениями и вообще адресом
-    ya_speech.synthesize('Подтверждаете?', context.va)
-    assert ya_speech.recognize(context.va) == "подтверждаете"
+    if context.va_task == 'save':
+        if context.location is not None:
+            address = maps_functions.get_address(context.location)
+            if address is not None:
+                ya_speech.synthesize(address, context.va)
+            else:
+                ya_speech.synthesize('Не могу определить адрес точки', context.va)
+            if context.task_status == 'set':
+                context.task_status = 'waits_approve'
 
 
-@then('VA asks "How to name?"')
-def location_name(context):
-    ya_speech.synthesize('Задай имя', context.va)
-    assert ya_speech.recognize(context.va) == "задай имя"
-
-
-@when('User says {name}')
-def location_name(context, name):
-    if name != 'nothing':
-        ya_speech.synthesize(name, context.user)
-        context.name_active = ya_speech.recognize(context.user)
-        assert context.name_active is not None
-    else:
-        context.name_active = ya_speech.recognize('audio_files/empty_file.wav')
-        assert context.name_active is None
-    if context.name_active is not None:
-        res = locations.add_location(context.name_active, context.location)
-        context.save_result = res
-
-
-@then('VA says "Location is saved"')
-def confirm_location_saved(context):
-    assert context.save_result == "ok"
-    ya_speech.synthesize('Место ' + context.name_active + ' сохранено!', context.va)
-    assert ya_speech.recognize(context.va) == "место " + context.name_active + " сохранено"
-    context.name_active = None
-
-
-@then('VA says "Location already exists"')
-def confirm_location_saved(context):
-    assert context.save_result == "already exists"
-    ya_speech.synthesize('Место ' + context.name_active + ' уже существует!', context.va)
-    assert ya_speech.recognize(context.va) == "место " + context.name_active + " уже существует"
+@then(u'VA asks for confirmation')
+def approve_location(context):
+    assert context.task_status == 'waits_approve'
+    ya_speech.synthesize('Продолжить?', context.va)
 
 
 @then("VA says 'Can't determine location'")
 def get_location_fail(context):
-    context.location = None
-    assert context.location is None
-    ya_speech.synthesize('Не могу определить местоположение', context.va)
-    assert ya_speech.recognize(context.va) == "не могу определить местоположение"
+    if context.user_last_command == "сохранить текущее местоположение":
+        if context.location is None:
+            ya_speech.synthesize('Не могу определить местоположение', context.va)
 
 
-@then(u'VA says \'Can\'t recognize name\'')
-def location_name_error(context):
-    assert context.name_active is None
+@then('VA asks to set a name')
+def location_name(context):
+    if context.va_task == 'save' and context.task_status == 'approved':
+        ya_speech.synthesize('Задай имя', context.va)
+
+
+@when('User says {name}')
+def location_name(context, name):
+    context.name_active = name
+    # context.name_active = ya_speech.recognize(context.user)
+
+
+@then('VA saves location')
+def step_impl(context):
+    assert context.name_active is not None
+    assert context.va_task == 'save'
+    assert context.task_status == 'approved'
+    res = locations.add_location(context.name_active, context.location)
+    if res == 'ok':
+        context.task_status = 'done'
+
+
+@then('VA says "Location already exists"')
+def step_impl(context):
+    assert context.name_active is not None
+    assert context.va_task == 'save'
+    assert context.task_status == 'approved'
+    res = locations.add_location(context.name_active, context.location)
+    if res != 'ok':
+        context.task_status = 'rejected'
+        ya_speech.synthesize('Место ' + context.name_active + ' уже существует!', context.va)

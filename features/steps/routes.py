@@ -1,6 +1,6 @@
 from behave import *
 from modules import maps_functions, record_audio, ya_speech
-from modules import additional_funcs, locations, directions
+from modules import locations, directions
 
 route_modes = ['walking', 'driving', 'transit']
 
@@ -38,6 +38,11 @@ def step_impl(context, mode):
         context.route_mode = None
 
 
+@when(u'user says choose the fastest mode')
+def step_impl(context):
+    context.route_mode = 'fastest'
+
+
 @then(u'VA validates locations')
 def step_impl(context):
     if context.route_from == 'current':
@@ -53,15 +58,30 @@ def step_impl(context):
     assert context.route_from is not None and context.route_to is not None
 
 
+@then(u'VA names the travel mode')
+def step_impl(context):
+    assert context.route_mode == 'fastest'
+    dur_mode = {}
+    for mode in route_modes:
+        route = directions.get_directions(context.route_from,
+                                          context.route_from,
+                                          mode)
+        dur = directions.route_duration(route)
+        dur_mode[mode] = dur
+    context.route_mode = min(dur_mode, key=dur_mode.get)
+    # context.route_dur = dur_mode[context.route_mode]
+
+
 @then(u'VA says time')
 def step_impl(context):
+    assert context.route_mode in route_modes
     route = directions.get_directions(context.route_from,
                                       context.route_from,
                                       context.route_mode)
     assert route is not None
     context.route = route
-    dur = directions.route_duration(route)
-    ya_speech.synthesize('Маршрут займет ' + str(dur) + ' минут', context.va)
+    context.route_dur = directions.route_duration(route)
+    ya_speech.synthesize('Маршрут займет ' + str(context.route_dur) + ' минут', context.va)
 
 
 @then(u'VA says "Invalid location(s)"')

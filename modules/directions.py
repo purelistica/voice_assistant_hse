@@ -7,7 +7,7 @@ from modules import auth_keys
 def get_directions(origin, destination, mode='driving'):
     """Accepts coordinates only for now"""
     params = {'origin': to_point(origin), 'destination': to_point(destination),
-              'mode': mode, 'key': auth_keys.key}
+              'mode': mode, 'departure_time': 'now', 'key': auth_keys.key}
     link = 'https://maps.googleapis.com/maps/api/directions/json?'
     url = link + urlencode(params)
     r = requests.get(url)
@@ -24,6 +24,10 @@ def to_point(latlng):
 
 
 def route_duration(routes):
-    dur = routes[0]['legs'][0]['duration']['value']
+    leg = routes[0]['legs'][0]
+    if 'duration_in_traffic' in leg:
+        dur = leg['duration_in_traffic']['value']
+    else:
+        dur = leg['duration']['value']
     minutes = round(dur/60)
     return minutes
