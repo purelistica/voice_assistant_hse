@@ -8,22 +8,10 @@ edit_properties = ['name', 'address']
 
 @when('User says delete {name}')
 def delete_location_name(context, name):
-    context.name_active = name.lower()
-    context.name_active_loc = locations.get_by_name(context.name_active)
-    pass
-
-
-@then('VA repeats place name and address')
-def step_impl(context):
-    assert context.name_active_loc != 'not found'
-    address = maps_functions.get_address(context.name_active_loc)
-    ya_speech.synthesize(context.name_active + ' ' + address, context.va)
-
-
-@then('VA asks "Delete?"')
-def delete_location_confirm(context):
-    ya_speech.synthesize('Удалить?', context.va)
-    pass
+    if context.va_task is None:
+        context.va_task = 'delete'
+        context.task_status = 'set'
+        context.name_active = name.lower()
 
 
 @then('VA says "The place is not found"')
@@ -33,14 +21,15 @@ def step_impl(context):
     ya_speech.synthesize('Место ' + context.name_active + ' не найдено', context.va)
 
 
-@then('VA deletes place and says "Deleted"')
+@then('VA deletes place')
 def delete_location(context):
+    assert context.va_task == 'delete'
+    assert context.task_status == 'approved'
     res = locations.remove_location(context.name_active)
-    assert res == "ok"
-    assert locations.get_by_name(context.name_active) == 'not found'
-    context.name_active = None
-    ya_speech.synthesize('Удалено', context.va)
-    assert ya_speech.recognize(context.va) == "удалено"
+    if res == "ok" and locations.get_by_name(context.name_active) == 'not found':
+        context.task_status = 'done'
+    else:
+        context.task_status = 'rejected'
 
 
 # ----------
@@ -80,6 +69,15 @@ def step_impl(context):
                     context.task_status = 'rejected'  # нет такого
         else:
             context.task_status = 'rejected'  # не распознали
+    elif context.va_task == 'delete' and context.task_status == 'set':
+        if context.name_active != '' and context.name_active is not None:
+            context.name_active_loc = locations.get_by_name(context.name_active)
+            if context.name_active_loc != 'not found' and context.name_active_loc is not None:
+                context.task_status = 'waits_approve'
+            else:
+                context.task_status = 'rejected'
+        else:
+            context.task_status = 'rejected'  # ошибка распознавания
 
 
 @then(u'VA asks "What would you like to change, name or address?"')

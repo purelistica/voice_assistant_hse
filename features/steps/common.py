@@ -30,7 +30,6 @@ def step_impl(context):
     locations.update_locations(d)
 
 
-
 @given('location {name} exists in saved list')
 def step_impl(context, name):
     name = name.lower()
