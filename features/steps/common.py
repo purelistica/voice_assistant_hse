@@ -1,6 +1,6 @@
 from behave import *
 from modules import maps_functions, record_audio, ya_speech
-from modules import additional_funcs, locations
+from modules import locations
 
 
 commands = ['save', 'edit', 'delete', 'route']
